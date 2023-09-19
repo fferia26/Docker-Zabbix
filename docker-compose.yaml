@@ -3,7 +3,7 @@ version: '3.5'
 services:
 
   server:
-    image: zabbix/zabbix-server-pgsql:alpine-5.4-latest
+    image: zabbix/zabbix-server-pgsql:alpine-6.4-latest
     ports:
       - "10051:10051"
     volumes:
@@ -29,9 +29,15 @@ services:
       - ZBX_HOUSEKEEPINGFREQUENCY=1
       - ZBX_MAXHOUSEKEEPERDELETE=5000
       - ZBX_PROXYCONFIGFREQUENCY=3600
+    networks:
+      zabbix_network:
+        aliases:
+          - zabbix-server
+          - zabbix-server-pgsql
+      
 
   web-nginx-pgsql:
-    image: zabbix/zabbix-web-nginx-pgsql:alpine-5.4-latest
+    image: zabbix/zabbix-web-nginx-pgsql:alpine-6.4-latest
     ports:
       - "8080:8080"
       - "8443:8443"
@@ -58,11 +64,15 @@ services:
       - POSTGRES_DB=zabbixNew
       - ZBX_SERVER_HOST=server
       - ZBX_POSTMAXSIZE=64M
-      - PHP_TZ=Europe/Moscow
+      - PHP_TZ=America/Bogota
       - ZBX_MAXEXECUTIONTIME=500
+    networks:
+      zabbix_network:
+        aliases:
+          - zabbix-web-nginx-pgsql
       
   agent:
-    image: zabbix/zabbix-agent:alpine-5.4-latest
+    image: zabbix/zabbix-agent:alpine-6.4-latest
     ports:
       - "10050:10050"
     volumes:
@@ -79,9 +89,13 @@ services:
       - server
     environment:
       - ZBX_SERVER_HOST=server
+    networks:
+      zabbix_network:
+        aliases:
+          - zabbix-agent
       
   snmptraps:
-    image: zabbix/zabbix-snmptraps:alpine-5.4-latest
+    image: zabbix/zabbix-snmptraps:alpine-6.4-latest
     ports:
       - "162:1162/udp"
     volumes:
@@ -90,8 +104,13 @@ services:
     depends_on:
       - server
     environment:
-      - ZBX_SERVER_HOST=server
-      
+      - ZBX_SERVER_HOST=zabbix-agent
+    networks:
+      zabbix_network:
+        aliases:
+          - zabbix-snmptraps
+
+
   postgres-server:
     image: postgres:13-alpine
     volumes:
@@ -108,5 +127,14 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      zabbix_network:
+        aliases:
+          - zabbix-postgres
       
      
+networks:
+  zabbix_network:
+    driver: bridge
+    ipam:
+      driver: default
