@@ -88,7 +88,7 @@ services:
     depends_on:
       - server
     environment:
-      - ZBX_SERVER_HOST=server
+      - ZBX_SERVER_HOST=zabbix-server
     networks:
       zabbix_network:
         aliases:
@@ -132,7 +132,23 @@ services:
         aliases:
           - zabbix-postgres
       
-     
+  grafana:
+    container_name: grafana
+    image: grafana/grafana:9.0.7-ubuntu
+    networks:
+      zabbix_network:
+        aliases:
+          - zabbix-grafana
+    restart: unless-stopped
+    user: "472"
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data/grafana:/var/lib/grafana
+    env_file:
+      - ./data/env_vars/grafana.env
+
+
 networks:
   zabbix_network:
     driver: bridge
